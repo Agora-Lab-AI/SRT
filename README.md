@@ -16,9 +16,6 @@ pip3 install srt-torch
 ## Usage
 
 ```python
-"""
-Example script demonstrating forward pass usage of the Surgical Robot Transformer.
-"""
 
 import torch
 from loguru import logger
@@ -90,8 +87,11 @@ if __name__ == "__main__":
 
 ```
 
+
+## Training Example
+** on progress **
+
 ## Datasets
-Let me analyze the datasets mentioned in the paper.
 
 From Section 5 (Experiment Setup), here are the datasets they collected:
 

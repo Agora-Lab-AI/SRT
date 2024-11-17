@@ -90,6 +90,69 @@ if __name__ == "__main__":
 
 ```
 
+## Datasets
+Let me analyze the datasets mentioned in the paper.
+
+From Section 5 (Experiment Setup), here are the datasets they collected:
+
+1. Tissue Lift Dataset:
+- 224 trials
+- Single user
+- Collected across multiple days
+- Task: Grabbing corner of rubber pad and lifting upwards
+- Training constraint: Corner kept within marked red box area
+
+2. Needle Pickup and Handover Dataset:
+- 250 trials
+- Single user
+- Collected across multiple days
+- Task: Picking up needle and transferring between arms
+- Training constraint: Needle placed randomly inside red box area
+- Test setup: Center hump of needle placed at nine predefined locations
+
+3. Knot Tying Dataset:
+- 500 trials
+- Single user
+- Collected across multiple days
+- Task: Creating loop with left string, grabbing terminal end through loop, pulling grippers apart
+- Training constraint: String origins randomly placed inside red box
+- Test setup: Strings centered in red box
+
+Additional Test Datasets (Generalization):
+1. Pork Tissue Background
+- Used for needle pickup and handover task evaluation
+- Success rate: 9/9 on pickup, 9/9 on handover
+
+2. Chicken Tissue Background
+- Used for qualitative evaluation
+- No specific trial numbers mentioned
+
+3. 3D Suture Pad
+- Used for qualitative evaluation
+- No specific trial numbers mentioned
+
+Important Dataset Collection Details:
+- All data collected on da Vinci Research Kit (dVRK)
+- Used stereo endoscope and wrist cameras
+- Collected in reference configuration shown in Fig. 5
+- Used simulated abdomen dome for tool placement
+- Approximate placement through larger holes than tool shaft size
+- Manual placement using setup joints
+
+The key point about their dataset is from Section 1:
+> "...as of 2021, over 10 million surgeries have been performed using 6,500 da Vinci systems in 67 countries, with 55,000 surgeons trained on the system [2]. Often, the video and kinematics data are recorded for post-operative analysis, resulting in a large repository of demonstration data."
+
+However, they did not use this larger dataset, instead collecting their own controlled dataset for the study.
+
+The paper does not mention if they plan to release their datasets publicly.
+
+
+# Todo
+
+- [ ] Add training logic (in progress)
+- [ ] Start testsing
+- [ ] Make a list of the datasets used in the paper
+
 
 ## Citation
 

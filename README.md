@@ -88,7 +88,6 @@ if __name__ == "__main__":
 ```
 
 ## Model Architecture
-
 ```mermaid
 flowchart TB
     subgraph Inputs["Input Observations"]
@@ -153,12 +152,6 @@ flowchart TB
     TransformerDecoder --> |"[B, D]"| ActionPredictor
     ActionPredictor --> LP & LR & LG & RP & RR & RG
 
-    style Inputs fill:#e1f5fe,stroke:#01579b
-    style ImageEncoder fill:#fff3e0,stroke:#e65100
-    style TransformerEncoder fill:#f3e5f5,stroke:#4a148c
-    style TransformerDecoder fill:#e8f5e9,stroke:#1b5e20
-    style ActionPredictor fill:#fbe9e7,stroke:#bf360c
-    style Outputs fill:#f3e5f5,stroke:#4a148c
 ```
 
 

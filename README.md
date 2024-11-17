@@ -6,3 +6,31 @@
 An open-source non-official community implementation of the model from the paper: Surgical Robot Transformer (SRT): Imitation Learning for Surgical Tasks: https://surgical-robot-transformer.github.io/
 
 
+## Installation
+
+```bash
+pip3 install srt-torch
+```
+
+
+## Usage
+
+```
+
+```
+
+
+## Citation
+
+
+```bibtex
+@misc{kim2024surgicalrobottransformersrt,
+    title={Surgical Robot Transformer (SRT): Imitation Learning for Surgical Tasks}, 
+    author={Ji Woong Kim and Tony Z. Zhao and Samuel Schmidgall and Anton Deguet and Marin Kobilarov and Chelsea Finn and Axel Krieger},
+    year={2024},
+    eprint={2407.12998},
+    archivePrefix={arXiv},
+    primaryClass={cs.RO},
+    url={https://arxiv.org/abs/2407.12998}, 
+}
+```

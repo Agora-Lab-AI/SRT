@@ -4,7 +4,7 @@ Example script demonstrating forward pass usage of the Surgical Robot Transforme
 
 import torch
 from loguru import logger
-from srt.main import (
+from srt_torch.main import (
     SurgicalRobotTransformer,
     ModelConfig,
     RobotObservation,

@@ -13,6 +13,7 @@ import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
 from loguru import logger
+import timm
 
 # Configure logging
 logger.add("srt.log", rotation="500 MB")
@@ -98,47 +99,112 @@ class RobotAction:
             right_gripper=tensor[..., 19:20],
         )
 
-
 class ImageEncoder(nn.Module):
-    """Encodes multiple camera views into latent space."""
+    """Encodes multiple camera views into latent space using EVA Large."""
 
     def __init__(self, config: ModelConfig):
         super().__init__()
         self.config = config
-
-        self.backbone = nn.Sequential(
-            nn.Conv2d(
-                config.num_channels, 64, 7, stride=2, padding=3
-            ),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(3, stride=2, padding=1),
-            nn.Conv2d(64, 128, 3, stride=2, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, 3, stride=2, padding=1),
-            nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Flatten(),
+        
+        # Initialize EVA Large backbone
+        self.backbone = timm.create_model(
+            'eva_large_patch14_336',
+            pretrained=True,
+            num_classes=0,  # Remove classification head
+            global_pool='avg',  # Use average pooling
         )
+        
+        # Freeze backbone parameters (optional, can be controlled via config)
+        if getattr(config, 'freeze_backbone', True):
+            for param in self.backbone.parameters():
+                param.requires_grad = False
+        
+        # Projection head to match transformer dimensions
+        self.projection = nn.Sequential(
+            nn.Linear(1024, config.hidden_dim * 2),  # EVA Large outputs 1024 features
+            nn.LayerNorm(config.hidden_dim * 2),
+            nn.GELU(),
+            nn.Dropout(config.dropout),
+            nn.Linear(config.hidden_dim * 2, config.hidden_dim),
+            nn.LayerNorm(config.hidden_dim),
+            nn.Dropout(config.dropout)
+        )
+        
+        # Initialize projection weights
+        self._init_weights()
+        
+        # Image normalization parameters for EVA
+        self.register_buffer('mean', torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
+        self.register_buffer('std', torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
 
-        self.projection = nn.Linear(256, config.hidden_dim)
+    def _init_weights(self):
+        """Initialize the weights of the projection layers."""
+        for m in self.projection.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.LayerNorm):
+                nn.init.constant_(m.bias, 0)
+                nn.init.constant_(m.weight, 1.0)
+
+    def preprocess_images(self, images: torch.Tensor) -> torch.Tensor:
+        """Normalize and preprocess images for EVA model."""
+        # Ensure images are float and in range [0, 1]
+        if images.dtype == torch.uint8:
+            images = images.float() / 255.0
+        
+        # Normalize with ImageNet statistics
+        images = (images - self.mean) / self.std
+        
+        # Resize if needed
+        if images.shape[-2:] != (336, 336):  # EVA Large expected input size
+            images = F.interpolate(
+                images,
+                size=(336, 336),
+                mode='bilinear',
+                align_corners=False
+            )
+        
+        return images
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         """
         Args:
             images: [B, 4, C, H, W] tensor of camera views
+                   B: batch size
+                   4: number of views (stereo_left, stereo_right, wrist_left, wrist_right)
+                   C: channels (3 for RGB)
+                   H, W: height and width
 
         Returns:
-            [B, 4, D] encoded features
+            [B, 4, D] encoded features where D is config.hidden_dim
         """
         B = images.shape[0]
         features = []
+        
+        # Process each camera view separately
         for i in range(4):
-            x = self.backbone(images[:, i])
-            x = self.projection(x)
+            # Extract and preprocess single view
+            view = images[:, i]  # [B, C, H, W]
+            view = self.preprocess_images(view)
+            
+            # Extract features through EVA backbone
+            with torch.cuda.amp.autocast(enabled=True):  # Enable AMP for efficiency
+                x = self.backbone(view)  # [B, 1024]
+            
+            # Project to transformer dimension
+            x = self.projection(x)  # [B, hidden_dim]
             features.append(x)
 
-        return torch.stack(features, dim=1)
+        # Stack all views
+        features = torch.stack(features, dim=1)  # [B, 4, hidden_dim]
+        
+        return features
 
+    def get_output_dim(self) -> int:
+        """Return the output dimension of the encoder."""
+        return self.config.hidden_dim
 
 class TransformerBlock(nn.Module):
     """Standard transformer encoder/decoder block."""

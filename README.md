@@ -214,6 +214,31 @@ However, they did not use this larger dataset, instead collecting their own cont
 The paper does not mention if they plan to release their datasets publicly.
 
 
+## Implementation Details from the paper:
+
+```txt
+4 Implementation Details
+To train our policies, we use action chunking with transformers (ACT) [23] and diffusion policy
+[64]. The policies were trained using the endoscope and wrist cameras images as input, which are all
+downsized to image size of 224 × 224 × 3. The original input size of the surgical endoscope images
+were 1024 × 1280 × 3 and the wrist images were 480 × 640 × 3. Kinematics data is not provided as
+input as commonly done in other imitation learning approaches because it is generally inconsistent
+due to the design limitations of the dVRK. The policy outputs include the end-effector (delta) position,
+(delta) orientation, and jaw angle for both arms. We leave further specific implementation details in
+Appendix A.
+```
+
+### Appendix A
+
+```txt
+main modifications include changing the input layers to accept four images, which include left/right surgical endoscope views and left/right wrist camera views. The output dimensions are also
+revised to generate end-effector poses, which amounts to a 10-dim vector for each arm (position [3]+ orientation [6] + jaw angle [1] = 10), thus amounting to a 20-dim vector total for both arms. The
+orientation was modeled using a 6D rotation representation following [21], where the 6 elements corrrespond to the first two columns of the rotation matrix. Since the network predictions may not
+generate orthonormal vectors, Gram-Schmidt process is performed to convert them to orthonormal vectors, and a cross product of the two vectors are performed to generate the remaining third column
+of the rotation matrix. For diffusion policy, similar modifications are made such as changing the input and the output dimensions of the network appropriately. The specific hyperparameters for training
+are shown in Table 3 and 4.
+```
+
 # Todo
 
 - [ ] Add training logic (in progress)
